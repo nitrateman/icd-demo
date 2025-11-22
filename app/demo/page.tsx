@@ -1,4 +1,9 @@
 // app/demo/page.tsx
+import dynamic from "next/dynamic";
+
+const FifaMap = dynamic(() => import("../../components/FifaMap"), {
+  ssr: false,
+});
 
 const incidents = [
   {
@@ -147,6 +152,24 @@ export default function Demo() {
           </section>
 
           {/* Map placeholder */}
+          <section className="xl:col-span-1 rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/80 to-black p-4">
+            <header className="mb-3 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-200">
+                  Operational Map
+                </h2>
+                <p className="text-xs text-gray-500">
+                  Venue cities for FIFA 26, visualized on a live Mapbox canvas.
+                </p>
+              </div>
+              <span className="rounded-full bg-blue-500/15 px-3 py-1 text-xs font-medium text-blue-300">
+                Demo View
+              </span>
+            </header>
+
+             <FifaMap />
+          </section>
+
           <section className="xl:col-span-1 rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/80 to-black p-4">
             <header className="mb-3 flex items-center justify-between">
               <div>
