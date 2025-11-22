@@ -1,3 +1,4 @@
+// app/demo/page.tsx
 "use client";
 
 import dynamic from "next/dynamic";
@@ -14,6 +15,9 @@ const incidents = [
     venue: "Stadium A – North Gate",
     time: "20:17",
     status: "Active",
+    // Assume this is in Los Angeles for demo
+    lat: 34.0522,
+    lng: -118.2437,
   },
   {
     id: "INC-2037",
@@ -22,6 +26,9 @@ const incidents = [
     venue: "Fan Zone 3",
     time: "19:52",
     status: "Monitoring",
+    // Put this one in New York / Jersey
+    lat: 40.7128,
+    lng: -74.006,
   },
   {
     id: "INC-1999",
@@ -30,6 +37,9 @@ const incidents = [
     venue: "Team Bus Route – Cluster West",
     time: "19:10",
     status: "Resolved",
+    // Put this near Dallas
+    lat: 32.7767,
+    lng: -96.797,
   },
 ];
 
@@ -168,7 +178,7 @@ export default function Demo() {
               </span>
             </header>
             <div className="flex-1">
-              <FifaMap />
+              <FifaMap incidents={incidents} />
             </div>
           </section>
 

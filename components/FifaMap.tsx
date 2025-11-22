@@ -15,6 +15,15 @@ type Venue = {
   lng: number;
 };
 
+type IncidentMarker = {
+  id: string;
+  severity: "Critical" | "High" | "Medium" | string;
+  type: string;
+  venue: string;
+  lat: number;
+  lng: number;
+};
+
 const venues: Venue[] = [
   { id: "van", name: "Vancouver", country: "Canada", city: "Vancouver", lat: 49.2827, lng: -123.1207 },
   { id: "sea", name: "Seattle", country: "USA", city: "Seattle", lat: 47.6062, lng: -122.3321 },
@@ -24,22 +33,28 @@ const venues: Venue[] = [
   { id: "cdmx", name: "Mexico City", country: "Mexico", city: "Mexico City", lat: 19.4326, lng: -99.1332 },
   { id: "mty", name: "Monterrey", country: "Mexico", city: "Monterrey", lat: 25.6866, lng: -100.3161 },
   { id: "hou", name: "Houston", country: "USA", city: "Houston", lat: 29.7604, lng: -95.3698 },
-  { id: "dal", name: "Dallas", country: "USA", city: "Dallas", lat: 32.7767, lng: -96.7970 },
+  { id: "dal", name: "Dallas", country: "USA", city: "Dallas", lat: 32.7767, lng: -96.797 },
   { id: "kc", name: "Kansas City", country: "USA", city: "Kansas City", lat: 39.0997, lng: -94.5786 },
-  { id: "atl", name: "Atlanta", country: "USA", city: "Atlanta", lat: 33.7490, lng: -84.3880 },
+  { id: "atl", name: "Atlanta", country: "USA", city: "Atlanta", lat: 33.749, lng: -84.388 },
   { id: "mia", name: "Miami", country: "USA", city: "Miami", lat: 25.7617, lng: -80.1918 },
   { id: "tor", name: "Toronto", country: "Canada", city: "Toronto", lat: 43.6532, lng: -79.3832 },
   { id: "bos", name: "Boston", country: "USA", city: "Boston", lat: 42.3601, lng: -71.0589 },
   { id: "phi", name: "Philly", country: "USA", city: "Philly", lat: 39.9526, lng: -75.1652 },
-  { id: "nyc", name: "New York / New Jersey", country: "USA", city: "New York / Jersey", lat: 40.7128, lng: -74.0060 },
+  { id: "nyc", name: "New York / New Jersey", country: "USA", city: "New York / Jersey", lat: 40.7128, lng: -74.006 },
 ];
 
-export default function FifaMap() {
+function getIncidentColor(severity: string) {
+  if (severity === "Critical") return "#ef4444"; // red-500
+  if (severity === "High") return "#f59e0b"; // amber-500
+  return "#38bdf8"; // sky-400 for Medium / default
+}
+
+export default function FifaMap({ incidents }: { incidents: IncidentMarker[] }) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const [selectedVenueId, setSelectedVenueId] = useState<string>("nyc");
 
-  // Initialize map
+  // Initialize map & static markers
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
     if (!mapboxgl.accessToken) {
@@ -58,17 +73,43 @@ export default function FifaMap() {
 
     mapRef.current = map;
 
-    // Add markers
+    // Venue markers (small blue dots)
     venues.forEach((venue) => {
       const el = document.createElement("div");
       el.className =
-        "rounded-full bg-blue-500 border border-white/60 w-3 h-3 shadow-lg";
+        "rounded-full bg-blue-500 border border-white/60 w-2.5 h-2.5 shadow-lg";
 
       new mapboxgl.Marker(el)
         .setLngLat([venue.lng, venue.lat])
         .setPopup(
-          new mapboxgl.Popup({ offset: 12 }).setHTML(
+          new mapboxgl.Popup({ offset: 10 }).setHTML(
             `<strong>${venue.name}</strong><br/>${venue.country}`
+          )
+        )
+        .addTo(map);
+    });
+
+    // Incident markers (severity-colored)
+    incidents.forEach((inc) => {
+      const el = document.createElement("div");
+      const color = getIncidentColor(inc.severity);
+
+      // Simple severity ring marker
+      el.style.width = "14px";
+      el.style.height = "14px";
+      el.style.borderRadius = "999px";
+      el.style.border = "2px solid white";
+      el.style.boxShadow = "0 0 12px rgba(0,0,0,0.6)";
+      el.style.backgroundColor = color;
+
+      new mapboxgl.Marker(el)
+        .setLngLat([inc.lng, inc.lat])
+        .setPopup(
+          new mapboxgl.Popup({ offset: 12 }).setHTML(
+            `<strong>${inc.id}</strong><br/>
+             ${inc.type}<br/>
+             <span style="color:${color};font-weight:600">${inc.severity}</span><br/>
+             <small>${inc.venue}</small>`
           )
         )
         .addTo(map);
@@ -78,9 +119,9 @@ export default function FifaMap() {
       map.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [incidents, selectedVenueId]);
 
-  // Pan when selected venue changes
+  // Fly when a venue chip is clicked
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
