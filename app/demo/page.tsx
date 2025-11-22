@@ -1,4 +1,5 @@
-// app/demo/page.tsx
+"use client";
+
 import dynamic from "next/dynamic";
 
 const FifaMap = dynamic(() => import("../../components/FifaMap"), {
