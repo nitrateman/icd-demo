@@ -83,6 +83,30 @@ const teams = [
   },
 ];
 
+const scenarios = [
+  {
+    id: "gate-medical",
+    label: "Gate Medical Event",
+    summary: "Critical medical at Stadium A – North Gate, Team Alpha responds.",
+    incidentId: "INC-2043", // LA medical
+    teamName: "Team Alpha",
+  },
+  {
+    id: "fan-surge",
+    label: "Fan Zone Surge",
+    summary: "High crowd density in Fan Zone 3, Team Charlie assists local security.",
+    incidentId: "INC-2037", // NYC crowd density
+    teamName: "Team Charlie",
+  },
+  {
+    id: "transit-delay",
+    label: "Transit Disruption",
+    summary: "Medium transport delay on bus route, Team Bravo reviews routing.",
+    incidentId: "INC-1999", // Dallas transport delay
+    teamName: "Team Bravo",
+  },
+];
+
 const statusColors: Record<string, string> = {
   Green: "bg-emerald-500",
   Amber: "bg-amber-500",
@@ -97,10 +121,30 @@ export default function Demo() {
   const [roleMode, setRoleMode] = useState<"Ops" | "Executive" | "Analyst">(
     "Ops"
   );
+    const [activeScenarioId, setActiveScenarioId] = useState<string | null>(null);
+
+  const handleScenarioSelect = (scenarioId: string) => {
+    setActiveScenarioId(scenarioId);
+
+    const scenario = scenarios.find((s) => s.id === scenarioId);
+    if (!scenario) return;
+
+    // Drive existing behaviors
+    if (scenario.incidentId) {
+      setSelectedIncidentId(scenario.incidentId);
+    }
+    if (scenario.teamName) {
+      setSelectedTeamName(scenario.teamName);
+    }
+
+    // Make sure we’re in Ops view for the “showtime” moment
+    setRoleMode("Ops");
+  };
   
   return (
     <main className="min-h-screen bg-black text-white px-4 py-6 md:px-8 md:py-8">
       <div className="mx-auto flex max-w-6xl flex-col gap-6">
+
         {/* Top bar */}
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="space-y-1">
@@ -151,8 +195,50 @@ export default function Demo() {
           </div>
         </div>
 
+                {/* Scenario strip */}
+        <div className="mt-2 mb-1 flex flex-col gap-2 rounded-2xl border border-gray-800 bg-gradient-to-r from-gray-900/80 to-black p-3 text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-purple-600/20 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-purple-200">
+                Scenario Mode
+              </span>
+              <span className="text-[11px] text-gray-400">
+                Select a scenario to drive the map, incidents, and teams as a guided demo.
+              </span>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {scenarios.map((scenario) => (
+                <button
+                  key={scenario.id}
+                  onClick={() => handleScenarioSelect(scenario.id)}
+                  className={
+                    "rounded-full border px-3 py-1 text-[11px] transition " +
+                    (activeScenarioId === scenario.id
+                      ? "border-purple-400 bg-purple-500/20 text-purple-100 shadow-[0_0_0_1px_rgba(168,85,247,0.6)]"
+                      : "border-gray-700 bg-gray-900 text-gray-300 hover:border-gray-500")
+                  }
+                >
+                  {scenario.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {activeScenarioId && (
+            <div className="mt-1 text-[11px] text-gray-400">
+              <span className="font-semibold text-gray-200">Active:</span>{" "}
+              {
+                scenarios.find((s) => s.id === activeScenarioId)
+                  ?.summary
+              }
+            </div>
+          )}
+        </div>
+
         {/* Grid layout */}
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+
 
           {/* Incidents feed */}
           <section className="xl:col-span-1 rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/80 to-black p-4">
