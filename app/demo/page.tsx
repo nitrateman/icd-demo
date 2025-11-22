@@ -149,6 +149,7 @@ export default function Demo() {
               ))}
             </div>
           </div>
+        </div>
 
         {/* Grid layout */}
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
