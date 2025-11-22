@@ -94,6 +94,9 @@ export default function Demo() {
     null
   );
   const [selectedTeamName, setSelectedTeamName] = useState<string | null>(null);
+  const [roleMode, setRoleMode] = useState<"Ops" | "Executive" | "Analyst">(
+    "Ops"
+  );
   
   return (
     <main className="min-h-screen bg-black text-white px-4 py-6 md:px-8 md:py-8">
@@ -108,21 +111,44 @@ export default function Demo() {
               Atlas Suite – Live Operations Demo
             </h1>
             <p className="max-w-2xl text-sm text-gray-400">
-              Static sample data showing how Atlas brings together incidents,
-              mapping, and personnel status for FIFA-scale events. In a live
-              deployment, each module is powered by real-time feeds.
+              {roleMode === "Ops" &&
+                "Static sample data showing how Atlas brings together incidents, mapping, and personnel status for FIFA-scale events. In a live deployment, each module is powered by real-time feeds."}
+              {roleMode === "Executive" &&
+                "Executive view: quick assessment of risk, readiness, and resource posture across FIFA venue clusters, designed for command-level decision support."}
+              {roleMode === "Analyst" &&
+                "Analyst view: focuses on patterns across incidents, deployments, and geography to surface emerging risks across FIFA venue clusters."}
             </p>
+
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs text-emerald-300">
-              Cluster: Example City
+          <div className="flex flex-col items-stretch gap-3 md:items-end">
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs text-emerald-300">
+                Cluster: Example City
+              </div>
+              <div className="rounded-full bg-gray-800 px-3 py-1 text-xs text-gray-300">
+                Local Time: 20:23
+              </div>
             </div>
-            <div className="rounded-full bg-gray-800 px-3 py-1 text-xs text-gray-300">
-              Local Time: 20:23
+
+            {/* Role toggle */}
+            <div className="inline-flex rounded-full bg-gray-900 p-1 text-xs">
+              {(["Ops", "Executive", "Analyst"] as const).map((role) => (
+                <button
+                  key={role}
+                  onClick={() => setRoleMode(role)}
+                  className={
+                    "px-3 py-1 rounded-full transition " +
+                    (roleMode === role
+                      ? "bg-blue-600 text-white shadow-[0_0_0_1px_rgba(37,99,235,0.7)]"
+                      : "text-gray-300 hover:bg-gray-800")
+                  }
+                >
+                  {role}
+                </button>
+              ))}
             </div>
           </div>
-        </div>
 
         {/* Grid layout */}
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -135,7 +161,12 @@ export default function Demo() {
                   Incidents
                 </h2>
                 <p className="text-xs text-gray-500">
-                  Prioritized, event-specific incident stream
+                  {roleMode === "Ops" &&
+                    "Prioritized, event-specific incident stream."}
+                  {roleMode === "Executive" &&
+                    "Roll-up of critical and high-priority items impacting operations."}
+                  {roleMode === "Analyst" &&
+                    "Current incident set for trend and correlation analysis."}
                 </p>
               </div>
               <span className="rounded-full bg-red-500/15 px-3 py-1 text-xs font-medium text-red-300">
@@ -194,7 +225,12 @@ export default function Demo() {
                   Operational Map
                 </h2>
                 <p className="text-xs text-gray-500">
-                  Venue cities for FIFA 26, visualized on a live Mapbox canvas.
+                  {roleMode === "Ops" &&
+                    "Venue cities for FIFA 26, visualized on a live Mapbox canvas."}
+                  {roleMode === "Executive" &&
+                    "High-level geographic view of venue exposure and resource posture."}
+                  {roleMode === "Analyst" &&
+                    "Spatial context for incident density, movement, and cross-cluster effects."}
                 </p>
               </div>
               <span className="rounded-full bg-blue-500/15 px-3 py-1 text-xs font-medium text-blue-300">
@@ -219,7 +255,12 @@ export default function Demo() {
                   Teams & K9 Units
                 </h2>
                 <p className="text-xs text-gray-500">
-                  Example roster view with quick-look status.
+                  {roleMode === "Ops" &&
+                    "Example roster view with quick-look status."}
+                  {roleMode === "Executive" &&
+                    "Summary of deployment posture across key response elements."}
+                  {roleMode === "Analyst" &&
+                    "Live unit positions supporting incident response and coverage analysis."}
                 </p>
               </div>
               <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-300">
