@@ -96,31 +96,42 @@ export default function FifaMap({
         .addTo(map);
     });
 
-    // Incident markers (severity-colored)
-    incidents.forEach((inc) => {
-      const el = document.createElement("div");
-      const color = getIncidentColor(inc.severity);
+    // Incident markers (severity-colored, Critical pulses)
+incidents.forEach((inc) => {
+  const color = getIncidentColor(inc.severity);
 
-      // Simple severity ring marker
-      el.style.width = "14px";
-      el.style.height = "14px";
-      el.style.borderRadius = "999px";
-      el.style.border = "2px solid white";
-      el.style.boxShadow = "0 0 12px rgba(0,0,0,0.6)";
-      el.style.backgroundColor = color;
+  // Outer container
+  const container = document.createElement("div");
+  container.className =
+    "relative flex items-center justify-center w-6 h-6";
 
-      new mapboxgl.Marker(el)
-        .setLngLat([inc.lng, inc.lat])
-        .setPopup(
-          new mapboxgl.Popup({ offset: 12 }).setHTML(
-            `<strong>${inc.id}</strong><br/>
-             ${inc.type}<br/>
-             <span style="color:${color};font-weight:600">${inc.severity}</span><br/>
-             <small>${inc.venue}</small>`
-          )
-        )
-        .addTo(map);
-    });
+  // Base dot
+  const dot = document.createElement("div");
+  dot.className =
+    "w-3 h-3 rounded-full border border-white shadow-lg";
+  dot.style.backgroundColor = color;
+  container.appendChild(dot);
+
+  // Pulsing ring for Critical incidents
+  if (inc.severity === "Critical") {
+    const pulse = document.createElement("div");
+    pulse.className =
+      "absolute inline-flex w-6 h-6 rounded-full bg-red-500/40 animate-ping";
+    container.appendChild(pulse);
+  }
+
+  new mapboxgl.Marker(container)
+    .setLngLat([inc.lng, inc.lat])
+    .setPopup(
+      new mapboxgl.Popup({ offset: 12 }).setHTML(
+        `<strong>${inc.id}</strong><br/>
+         ${inc.type}<br/>
+         <span style="color:${color};font-weight:600">${inc.severity}</span><br/>
+         <small>${inc.venue}</small>`
+      )
+    )
+    .addTo(map);
+});
 
     return () => {
       map.remove();
