@@ -49,7 +49,14 @@ function getIncidentColor(severity: string) {
   return "#38bdf8"; // sky-400 for Medium / default
 }
 
-export default function FifaMap({ incidents }: { incidents: IncidentMarker[] }) {
+export default function FifaMap({
+  incidents,
+  selectedIncidentId,
+}: {
+  incidents: IncidentMarker[];
+  selectedIncidentId: string | null;
+}) {
+
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const [selectedVenueId, setSelectedVenueId] = useState<string>("nyc");
@@ -119,7 +126,7 @@ export default function FifaMap({ incidents }: { incidents: IncidentMarker[] }) 
       map.remove();
       mapRef.current = null;
     };
-  }, [incidents, selectedVenueId]);
+  }, [incidents]);
 
   // Fly when a venue chip is clicked
   useEffect(() => {
@@ -137,6 +144,35 @@ export default function FifaMap({ incidents }: { incidents: IncidentMarker[] }) 
       essential: true,
     });
   }, [selectedVenueId]);
+
+    // Fly & popup when an incident card is clicked
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !selectedIncidentId) return;
+
+    const inc = incidents.find((i) => i.id === selectedIncidentId);
+    if (!inc) return;
+
+    const color = getIncidentColor(inc.severity);
+
+    map.flyTo({
+      center: [inc.lng, inc.lat],
+      zoom: 8,
+      speed: 0.9,
+      curve: 1.4,
+      essential: true,
+    });
+
+    new mapboxgl.Popup({ offset: 16, closeOnClick: true })
+      .setLngLat([inc.lng, inc.lat])
+      .setHTML(
+        `<strong>${inc.id}</strong><br/>
+         ${inc.type}<br/>
+         <span style="color:${color};font-weight:600">${inc.severity}</span><br/>
+         <small>${inc.venue}</small>`
+      )
+      .addTo(map);
+  }, [selectedIncidentId, incidents]);
 
   return (
     <div className="flex h-full flex-col gap-3">

@@ -1,6 +1,7 @@
 // app/demo/page.tsx
 "use client";
 
+import { useState } from "react";
 import dynamic from "next/dynamic";
 
 const FifaMap = dynamic(() => import("../../components/FifaMap"), {
@@ -77,6 +78,10 @@ const statusColors: Record<string, string> = {
 };
 
 export default function Demo() {
+  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(
+    incidents[0]?.id ?? null
+  );
+
   return (
     <main className="min-h-screen bg-black text-white px-4 py-6 md:px-8 md:py-8">
       <div className="mx-auto flex max-w-6xl flex-col gap-6">
@@ -108,6 +113,7 @@ export default function Demo() {
 
         {/* Grid layout */}
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+
           {/* Incidents feed */}
           <section className="xl:col-span-1 rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/80 to-black p-4">
             <header className="mb-3 flex items-center justify-between">
@@ -128,7 +134,13 @@ export default function Demo() {
               {incidents.map((inc) => (
                 <article
                   key={inc.id}
-                  className="rounded-xl border border-gray-800 bg-gray-900/70 p-3 text-sm"
+                  onClick={() => setSelectedIncidentId(inc.id)}
+                  className={
+                    "rounded-xl border bg-gray-900/70 p-3 text-sm cursor-pointer transition " +
+                     (selectedIncidentId === inc.id
+                      ? "border-blue-400 shadow-[0_0_0_1px_rgba(59,130,246,0.7)]"
+                      : "border-gray-800 hover:border-gray-500")
+                  }
                 >
                   <div className="mb-1 flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -148,9 +160,7 @@ export default function Demo() {
                         {inc.severity}
                       </span>
                     </div>
-                    <span className="text-[11px] text-gray-500">
-                      {inc.time} local
-                    </span>
+                    <span className="text-[11px] text-gray-500">{inc.time} local</span>
                   </div>
                   <p className="font-medium text-gray-100">{inc.type}</p>
                   <p className="text-xs text-gray-400">{inc.venue}</p>
@@ -159,6 +169,7 @@ export default function Demo() {
                   </p>
                 </article>
               ))}
+
             </div>
           </section>
 
@@ -178,7 +189,7 @@ export default function Demo() {
               </span>
             </header>
             <div className="flex-1">
-              <FifaMap incidents={incidents} />
+              <FifaMap incidents={incidents} selectedIncidentId={selectedIncidentId} />
             </div>
           </section>
 
