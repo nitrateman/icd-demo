@@ -24,6 +24,15 @@ type IncidentMarker = {
   lng: number;
 };
 
+type TeamMarker = {
+  name: string;
+  role: string;
+  cluster: string;
+  status: "Green" | "Amber" | "Red" | string;
+  lat: number;
+  lng: number;
+};
+
 const venues: Venue[] = [
   { id: "van", name: "Vancouver", country: "Canada", city: "Vancouver", lat: 49.2827, lng: -123.1207 },
   { id: "sea", name: "Seattle", country: "USA", city: "Seattle", lat: 47.6062, lng: -122.3321 },
@@ -46,22 +55,34 @@ const venues: Venue[] = [
 function getIncidentColor(severity: string) {
   if (severity === "Critical") return "#ef4444"; // red-500
   if (severity === "High") return "#f59e0b"; // amber-500
-  return "#38bdf8"; // sky-400 for Medium / default
+  return "#38bdf8"; // sky-400
+}
+
+function getTeamColor(status: string) {
+  if (status === "Green") return "#22c55e"; // green
+  if (status === "Amber") return "#f59e0b"; // amber
+  if (status === "Red") return "#ef4444"; // red
+  return "#6b7280"; // gray
 }
 
 export default function FifaMap({
   incidents,
   selectedIncidentId,
+  teams,
 }: {
   incidents: IncidentMarker[];
   selectedIncidentId: string | null;
+  teams: TeamMarker[];
 }) {
-
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
+
   const [selectedVenueId, setSelectedVenueId] = useState<string>("nyc");
 
-  // Initialize map & static markers
+  const teamMarkersRef = useRef<mapboxgl.Marker[]>([]);
+  const teamBasePositionsRef = useRef<{ lat: number; lng: number }[]>([]);
+
+  // Initialize map, venue markers, incidents, teams
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
     if (!mapboxgl.accessToken) {
@@ -97,47 +118,80 @@ export default function FifaMap({
     });
 
     // Incident markers (severity-colored, Critical pulses)
-incidents.forEach((inc) => {
-  const color = getIncidentColor(inc.severity);
+    incidents.forEach((inc) => {
+      const color = getIncidentColor(inc.severity);
 
-  // Outer container
-  const container = document.createElement("div");
-  container.className =
-    "relative flex items-center justify-center w-6 h-6";
+      const container = document.createElement("div");
+      container.className =
+        "relative flex items-center justify-center w-6 h-6";
 
-  // Base dot
-  const dot = document.createElement("div");
-  dot.className =
-    "w-3 h-3 rounded-full border border-white shadow-lg";
-  dot.style.backgroundColor = color;
-  container.appendChild(dot);
+      const dot = document.createElement("div");
+      dot.className =
+        "w-3 h-3 rounded-full border border-white shadow-lg";
+      dot.style.backgroundColor = color;
+      container.appendChild(dot);
 
-  // Pulsing ring for Critical incidents
-  if (inc.severity === "Critical") {
-    const pulse = document.createElement("div");
-    pulse.className =
-      "absolute inline-flex w-6 h-6 rounded-full bg-red-500/40 animate-ping";
-    container.appendChild(pulse);
-  }
+      if (inc.severity === "Critical") {
+        const pulse = document.createElement("div");
+        pulse.className =
+          "absolute inline-flex w-6 h-6 rounded-full bg-red-500/40 animate-ping";
+        container.appendChild(pulse);
+      }
 
-  new mapboxgl.Marker(container)
-    .setLngLat([inc.lng, inc.lat])
-    .setPopup(
-      new mapboxgl.Popup({ offset: 12 }).setHTML(
-        `<strong>${inc.id}</strong><br/>
-         ${inc.type}<br/>
-         <span style="color:${color};font-weight:600">${inc.severity}</span><br/>
-         <small>${inc.venue}</small>`
-      )
-    )
-    .addTo(map);
-});
+      new mapboxgl.Marker(container)
+        .setLngLat([inc.lng, inc.lat])
+        .setPopup(
+          new mapboxgl.Popup({ offset: 12 }).setHTML(
+            `<strong>${inc.id}</strong><br/>
+             ${inc.type}<br/>
+             <span style="color:${color};font-weight:600">${inc.severity}</span><br/>
+             <small>${inc.venue}</small>`
+          )
+        )
+        .addTo(map);
+    });
+
+    // Team markers (will be animated)
+    const teamMarkers: mapboxgl.Marker[] = [];
+    const basePositions: { lat: number; lng: number }[] = [];
+
+    teams.forEach((team) => {
+      const color = getTeamColor(team.status);
+
+      const container = document.createElement("div");
+      container.className =
+        "relative flex items-center justify-center w-6 h-6";
+
+      const dot = document.createElement("div");
+      dot.className =
+        "w-3 h-3 rounded-full border border-black shadow-lg";
+      dot.style.backgroundColor = color;
+      container.appendChild(dot);
+
+      const marker = new mapboxgl.Marker(container)
+        .setLngLat([team.lng, team.lat])
+        .setPopup(
+          new mapboxgl.Popup({ offset: 10 }).setHTML(
+            `<strong>${team.name}</strong><br/>
+             ${team.role}<br/>
+             <small>Status: ${team.status}</small>`
+          )
+        )
+        .addTo(map);
+
+      teamMarkers.push(marker);
+      basePositions.push({ lat: team.lat, lng: team.lng });
+    });
+
+    teamMarkersRef.current = teamMarkers;
+    teamBasePositionsRef.current = basePositions;
 
     return () => {
+      teamMarkers.forEach((m) => m.remove());
       map.remove();
       mapRef.current = null;
     };
-  }, [incidents]);
+  }, [incidents, teams, selectedVenueId]);
 
   // Fly when a venue chip is clicked
   useEffect(() => {
@@ -156,7 +210,7 @@ incidents.forEach((inc) => {
     });
   }, [selectedVenueId]);
 
-    // Fly & popup when an incident card is clicked
+  // Fly & popup when an incident card is clicked
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !selectedIncidentId) return;
@@ -184,6 +238,34 @@ incidents.forEach((inc) => {
       )
       .addTo(map);
   }, [selectedIncidentId, incidents]);
+
+  // LIVE GPS SIM: jitter team markers slightly around their base position
+  useEffect(() => {
+    if (!teamMarkersRef.current.length || !teamBasePositionsRef.current.length) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const markers = teamMarkersRef.current;
+      const bases = teamBasePositionsRef.current;
+
+      markers.forEach((marker, index) => {
+        const base = bases[index];
+        if (!base) return;
+
+        // Tiny jitter (~0.01 deg ~ 1km-ish) around base
+        const latOffset = (Math.random() - 0.5) * 0.02;
+        const lngOffset = (Math.random() - 0.5) * 0.02;
+
+        const newLat = base.lat + latOffset;
+        const newLng = base.lng + lngOffset;
+
+        marker.setLngLat([newLng, newLat]);
+      });
+    }, 8000); // every 8 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="flex h-full flex-col gap-3">

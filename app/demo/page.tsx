@@ -50,24 +50,36 @@ const teams = [
     role: "Stadium Response",
     cluster: "Central",
     status: "Green",
+    // Near Los Angeles
+    lat: 34.0522,
+    lng: -118.2437,
   },
   {
     name: "Team Bravo",
     role: "Mobile K9 Sweep",
     cluster: "South",
     status: "Amber",
+    // Near Houston
+    lat: 29.7604,
+    lng: -95.3698,
   },
   {
     name: "Team Charlie",
     role: "Fan Zone Detail",
     cluster: "East",
     status: "Green",
+    // Near Miami
+    lat: 25.7617,
+    lng: -80.1918,
   },
   {
     name: "K9 Unit – Nero",
     role: "Explosives Detection",
     cluster: "Transit Hub",
     status: "Green",
+    // Near Mexico City
+    lat: 19.4326,
+    lng: -99.1332,
   },
 ];
 
@@ -189,7 +201,11 @@ export default function Demo() {
               </span>
             </header>
             <div className="flex-1">
-              <FifaMap incidents={incidents} selectedIncidentId={selectedIncidentId} />
+              <FifaMap
+                incidents={incidents}
+                selectedIncidentId={selectedIncidentId}
+                teams={teams}
+              />
             </div>
           </section>
 
