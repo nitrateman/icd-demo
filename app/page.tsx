@@ -36,7 +36,21 @@ export default function Home() {
 
         {/* Video Placeholder */}
         <div className="mt-10 w-full aspect-video bg-gray-900 rounded-2xl flex items-center justify-center border border-gray-700">
-          <span className="text-gray-500">Demo Video Placeholder</span>
+          <div className="video-container">
+            <video
+              src="/demo/demo-video.mp4"
+              autoPlay
+              muted
+              loop
+              playsInline
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                borderRadius: "12px"
+              }}
+            />
+          </div>
         </div>
 
         {/* Footer Note */}
