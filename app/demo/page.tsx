@@ -93,7 +93,8 @@ export default function Demo() {
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(
     null
   );
-
+  const [selectedTeamName, setSelectedTeamName] = useState<string | null>(null);
+  
   return (
     <main className="min-h-screen bg-black text-white px-4 py-6 md:px-8 md:py-8">
       <div className="mx-auto flex max-w-6xl flex-col gap-6">
@@ -205,6 +206,7 @@ export default function Demo() {
                 incidents={incidents}
                 selectedIncidentId={selectedIncidentId}
                 teams={teams}
+                selectedTeamName={selectedTeamName}
               />
             </div>
           </section>
@@ -229,16 +231,18 @@ export default function Demo() {
               {teams.map((team) => (
                 <div
                   key={team.name}
-                  className="flex items-start justify-between rounded-xl border border-gray-800 bg-gray-900/70 p-3 text-sm"
+                  onClick={() => setSelectedTeamName(team.name)}
+                  className={
+                    "flex cursor-pointer items-start justify-between rounded-xl border bg-gray-900/70 p-3 text-sm transition " +
+                    (selectedTeamName === team.name
+                      ? "border-blue-400 shadow-[0_0_0_1px_rgba(59,130,246,0.7)]"
+                      : "border-gray-800 hover:border-gray-500")
+                  }
                 >
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-100">
-                        {team.name}
-                      </span>
-                      <span className="text-[11px] text-gray-500">
-                        {team.cluster}
-                      </span>
+                      <span className="font-medium text-gray-100">{team.name}</span>
+                      <span className="text-[11px] text-gray-500">{team.cluster}</span>
                     </div>
                     <p className="text-xs text-gray-400">{team.role}</p>
                   </div>
@@ -249,12 +253,11 @@ export default function Demo() {
                         (statusColors[team.status] ?? "bg-gray-500")
                       }
                     />
-                    <span className="text-[11px] text-gray-400">
-                      {team.status}
-                    </span>
+                    <span className="text-[11px] text-gray-400">{team.status}</span>
                   </div>
                 </div>
               ))}
+
             </div>
           </section>
         </div>

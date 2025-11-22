@@ -69,10 +69,12 @@ export default function FifaMap({
   incidents,
   selectedIncidentId,
   teams,
+  selectedTeamName,
 }: {
   incidents: IncidentMarker[];
   selectedIncidentId: string | null;
   teams: TeamMarker[];
+  selectedTeamName: string | null;
 }) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -81,6 +83,8 @@ export default function FifaMap({
 
   const teamMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const teamBasePositionsRef = useRef<{ lat: number; lng: number }[]>([]);
+  const teamTrailMarkersRef = useRef<mapboxgl.Marker[][]>([]);
+  const teamNamesRef = useRef<string[]>([]);
 
   // Initialize map, venue markers, incidents, teams
   useEffect(() => {
@@ -151,9 +155,11 @@ export default function FifaMap({
         .addTo(map);
     });
 
-    // Team markers (will be animated)
+    // Team markers (animated GPS)
     const teamMarkers: mapboxgl.Marker[] = [];
     const basePositions: { lat: number; lng: number }[] = [];
+    const trailMarkers: mapboxgl.Marker[][] = [];
+    const teamNames: string[] = [];
 
     teams.forEach((team) => {
       const color = getTeamColor(team.status);
@@ -181,13 +187,19 @@ export default function FifaMap({
 
       teamMarkers.push(marker);
       basePositions.push({ lat: team.lat, lng: team.lng });
+      trailMarkers.push([]);
+      teamNames.push(team.name);
     });
 
     teamMarkersRef.current = teamMarkers;
     teamBasePositionsRef.current = basePositions;
+    teamTrailMarkersRef.current = trailMarkers;
+    teamNamesRef.current = teamNames;
 
     return () => {
+      // cleanup
       teamMarkers.forEach((m) => m.remove());
+      trailMarkers.forEach((trail) => trail.forEach((m) => m.remove()));
       map.remove();
       mapRef.current = null;
     };
@@ -239,8 +251,10 @@ export default function FifaMap({
       .addTo(map);
   }, [selectedIncidentId, incidents]);
 
-  // LIVE GPS SIM: jitter team markers slightly around their base position
+  // LIVE GPS SIM: jitter team markers + drop short trails
   useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
     if (!teamMarkersRef.current.length || !teamBasePositionsRef.current.length) {
       return;
     }
@@ -248,12 +262,32 @@ export default function FifaMap({
     const interval = setInterval(() => {
       const markers = teamMarkersRef.current;
       const bases = teamBasePositionsRef.current;
+      const trails = teamTrailMarkersRef.current;
 
       markers.forEach((marker, index) => {
         const base = bases[index];
         if (!base) return;
 
-        // Tiny jitter (~0.01 deg ~ 1km-ish) around base
+        // current position before moving
+        const current = marker.getLngLat();
+
+        // create a faint ghost at the previous location
+        const ghostEl = document.createElement("div");
+        ghostEl.className =
+          "w-1.5 h-1.5 rounded-full bg-white/40 shadow-sm";
+
+        const ghostMarker = new mapboxgl.Marker(ghostEl)
+          .setLngLat([current.lng, current.lat])
+          .addTo(map);
+
+        // store trail and cap at 5 points per team
+        trails[index].push(ghostMarker);
+        if (trails[index].length > 5) {
+          const old = trails[index].shift();
+          old?.remove();
+        }
+
+        // Tiny jitter (~0.01 deg) around base
         const latOffset = (Math.random() - 0.5) * 0.02;
         const lngOffset = (Math.random() - 0.5) * 0.02;
 
@@ -266,6 +300,34 @@ export default function FifaMap({
 
     return () => clearInterval(interval);
   }, []);
+
+  // Fly & popup when a team card is clicked
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !selectedTeamName) return;
+    if (!teamMarkersRef.current.length || !teamNamesRef.current.length) return;
+
+    const index = teamNamesRef.current.findIndex(
+      (name) => name === selectedTeamName
+    );
+    if (index === -1) return;
+
+    const marker = teamMarkersRef.current[index];
+    const popup = marker.getPopup();
+    const pos = marker.getLngLat();
+
+    map.flyTo({
+      center: [pos.lng, pos.lat],
+      zoom: 9,
+      speed: 0.9,
+      curve: 1.4,
+      essential: true,
+    });
+
+    if (popup) {
+      popup.setLngLat(pos).addTo(map);
+    }
+  }, [selectedTeamName]);
 
   return (
     <div className="flex h-full flex-col gap-3">
