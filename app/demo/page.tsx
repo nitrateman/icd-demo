@@ -1,7 +1,7 @@
 // app/demo/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 
 const FifaMap = dynamic(() => import("../../components/FifaMap"), {
@@ -113,6 +113,55 @@ const statusColors: Record<string, string> = {
   Red: "bg-red-500",
 };
 
+type OpsZone = {
+  label: string;
+  tz: string;
+  note?: string;
+};
+
+const opsTimeZones: OpsZone[] = [
+  { label: "PT", tz: "America/Los_Angeles", note: "VAN / SEA / LA / SF" },
+  { label: "MT", tz: "America/Denver", note: "KC / MTY / GDL (approx)" },
+  { label: "CT", tz: "America/Chicago", note: "DAL / HOU / CDMX" },
+  { label: "ET", tz: "America/New_York", note: "NY / BOS / MIA / TOR / PHI / ATL" },
+];
+
+function OpsClock() {
+  const [now, setNow] = useState<Date>(new Date());
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setNow(new Date());
+    }, 30_000); // update every 30 seconds
+
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div className="flex flex-wrap gap-2 text-[11px] text-gray-300 md:justify-end">
+      {opsTimeZones.map((zone) => {
+        const timeStr = now.toLocaleTimeString("en-US", {
+          timeZone: zone.tz,
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        return (
+          <div
+            key={zone.label}
+            className="flex items-center gap-1 rounded-full bg-gray-800 px-2.5 py-1"
+          >
+            <span className="text-[10px] font-semibold text-gray-400">
+              {zone.label}
+            </span>
+            <span className="tabular-nums">{timeStr}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function Demo() {
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(
     null
@@ -170,10 +219,10 @@ export default function Demo() {
               <div className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs text-emerald-300">
                 Cluster: Example City
               </div>
-              <div className="rounded-full bg-gray-800 px-3 py-1 text-xs text-gray-300">
-                Local Time: 20:23
-              </div>
             </div>
+
+            {/* Ops clock */}
+            <OpsClock />
 
             {/* Role toggle */}
             <div className="inline-flex rounded-full bg-gray-900 p-1 text-xs">
