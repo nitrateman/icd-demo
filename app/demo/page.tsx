@@ -3,11 +3,13 @@
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
+import { DEMO_PASSWORD } from "./password";
 
 const FifaMap = dynamic(() => import("../../components/FifaMap"), {
   ssr: false,
 });
 
+// --------- Static demo data ---------
 const incidents = [
   {
     id: "INC-2043",
@@ -16,7 +18,6 @@ const incidents = [
     venue: "Stadium A – North Gate",
     time: "20:17",
     status: "Active",
-    // Assume this is in Los Angeles for demo
     lat: 34.0522,
     lng: -118.2437,
   },
@@ -27,7 +28,6 @@ const incidents = [
     venue: "Fan Zone 3",
     time: "19:52",
     status: "Monitoring",
-    // Put this one in New York / Jersey
     lat: 40.7128,
     lng: -74.006,
   },
@@ -38,7 +38,6 @@ const incidents = [
     venue: "Team Bus Route – Cluster West",
     time: "19:10",
     status: "Resolved",
-    // Put this near Dallas
     lat: 32.7767,
     lng: -96.797,
   },
@@ -50,7 +49,6 @@ const teams = [
     role: "Stadium Response",
     cluster: "Central",
     status: "Green",
-    // Near Los Angeles
     lat: 34.0522,
     lng: -118.2437,
   },
@@ -59,7 +57,6 @@ const teams = [
     role: "Mobile K9 Sweep",
     cluster: "South",
     status: "Amber",
-    // Near Houston
     lat: 29.7604,
     lng: -95.3698,
   },
@@ -68,7 +65,6 @@ const teams = [
     role: "Fan Zone Detail",
     cluster: "East",
     status: "Green",
-    // Near Miami
     lat: 25.7617,
     lng: -80.1918,
   },
@@ -77,7 +73,6 @@ const teams = [
     role: "Explosives Detection",
     cluster: "Transit Hub",
     status: "Green",
-    // Near Mexico City
     lat: 19.4326,
     lng: -99.1332,
   },
@@ -88,21 +83,23 @@ const scenarios = [
     id: "gate-medical",
     label: "Gate Medical Event",
     summary: "Critical medical at Stadium A – North Gate, Team Alpha responds.",
-    incidentId: "INC-2043", // LA medical
+    incidentId: "INC-2043",
     teamName: "Team Alpha",
   },
   {
     id: "fan-surge",
     label: "Fan Zone Surge",
-    summary: "High crowd density in Fan Zone 3, Team Charlie assists local security.",
-    incidentId: "INC-2037", // NYC crowd density
+    summary:
+      "High crowd density in Fan Zone 3, Team Charlie assists local security.",
+    incidentId: "INC-2037",
     teamName: "Team Charlie",
   },
   {
     id: "transit-delay",
     label: "Transit Disruption",
-    summary: "Medium transport delay on bus route, Team Bravo reviews routing.",
-    incidentId: "INC-1999", // Dallas transport delay
+    summary:
+      "Medium transport delay on bus route, Team Bravo reviews routing.",
+    incidentId: "INC-1999",
     teamName: "Team Bravo",
   },
 ];
@@ -123,17 +120,21 @@ const opsTimeZones: OpsZone[] = [
   { label: "PT", tz: "America/Los_Angeles", note: "VAN / SEA / LA / SF" },
   { label: "MT", tz: "America/Denver", note: "KC / MTY / GDL (approx)" },
   { label: "CT", tz: "America/Chicago", note: "DAL / HOU / CDMX" },
-  { label: "ET", tz: "America/New_York", note: "NY / BOS / MIA / TOR / PHI / ATL" },
+  {
+    label: "ET",
+    tz: "America/New_York",
+    note: "NY / BOS / MIA / TOR / PHI / ATL",
+  },
 ];
 
+// ---------- Ops clock ----------
 function OpsClock() {
   const [now, setNow] = useState<Date>(new Date());
 
   useEffect(() => {
     const id = setInterval(() => {
       setNow(new Date());
-    }, 30_000); // update every 30 seconds
-
+    }, 30_000);
     return () => clearInterval(id);
   }, []);
 
@@ -162,7 +163,8 @@ function OpsClock() {
   );
 }
 
-export default function Demo() {
+// ---------- The real demo UI (no export here) ----------
+function DemoContent() {
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(
     null
   );
@@ -170,7 +172,7 @@ export default function Demo() {
   const [roleMode, setRoleMode] = useState<"Ops" | "Executive" | "Analyst">(
     "Ops"
   );
-    const [activeScenarioId, setActiveScenarioId] = useState<string | null>(null);
+  const [activeScenarioId, setActiveScenarioId] = useState<string | null>(null);
 
   const handleScenarioSelect = (scenarioId: string) => {
     setActiveScenarioId(scenarioId);
@@ -178,7 +180,6 @@ export default function Demo() {
     const scenario = scenarios.find((s) => s.id === scenarioId);
     if (!scenario) return;
 
-    // Drive existing behaviors
     if (scenario.incidentId) {
       setSelectedIncidentId(scenario.incidentId);
     }
@@ -186,14 +187,12 @@ export default function Demo() {
       setSelectedTeamName(scenario.teamName);
     }
 
-    // Make sure we’re in Ops view for the “showtime” moment
     setRoleMode("Ops");
   };
-  
+
   return (
     <main className="min-h-screen bg-black text-white px-4 py-6 md:px-8 md:py-8">
       <div className="mx-auto flex max-w-6xl flex-col gap-6">
-
         {/* Top bar */}
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="space-y-1">
@@ -211,7 +210,6 @@ export default function Demo() {
               {roleMode === "Analyst" &&
                 "Analyst view: focuses on patterns across incidents, deployments, and geography to surface emerging risks across FIFA venue clusters."}
             </p>
-
           </div>
 
           <div className="flex flex-col items-stretch gap-3 md:items-end">
@@ -221,10 +219,8 @@ export default function Demo() {
               </div>
             </div>
 
-            {/* Ops clock */}
             <OpsClock />
 
-            {/* Role toggle */}
             <div className="inline-flex rounded-full bg-gray-900 p-1 text-xs">
               {(["Ops", "Executive", "Analyst"] as const).map((role) => (
                 <button
@@ -244,7 +240,7 @@ export default function Demo() {
           </div>
         </div>
 
-                {/* Scenario strip */}
+        {/* Scenario strip */}
         <div className="mt-2 mb-1 flex flex-col gap-2 rounded-2xl border border-gray-800 bg-gradient-to-r from-gray-900/80 to-black p-3 text-xs">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
@@ -252,7 +248,8 @@ export default function Demo() {
                 Scenario Mode
               </span>
               <span className="text-[11px] text-gray-400">
-                Select a scenario to drive the map, incidents, and teams as a guided demo.
+                Select a scenario to drive the map, incidents, and teams as a
+                guided demo.
               </span>
             </div>
 
@@ -277,19 +274,14 @@ export default function Demo() {
           {activeScenarioId && (
             <div className="mt-1 text-[11px] text-gray-400">
               <span className="font-semibold text-gray-200">Active:</span>{" "}
-              {
-                scenarios.find((s) => s.id === activeScenarioId)
-                  ?.summary
-              }
+              {scenarios.find((s) => s.id === activeScenarioId)?.summary}
             </div>
           )}
         </div>
 
         {/* Grid layout */}
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-
-
-          {/* Incidents feed */}
+          {/* Incidents */}
           <section className="xl:col-span-1 rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/80 to-black p-4">
             <header className="mb-3 flex items-center justify-between">
               <div>
@@ -317,7 +309,7 @@ export default function Demo() {
                   onClick={() => setSelectedIncidentId(inc.id)}
                   className={
                     "rounded-xl border bg-gray-900/70 p-3 text-sm cursor-pointer transition " +
-                     (selectedIncidentId === inc.id
+                    (selectedIncidentId === inc.id
                       ? "border-blue-400 shadow-[0_0_0_1px_rgba(59,130,246,0.7)]"
                       : "border-gray-800 hover:border-gray-500")
                   }
@@ -340,7 +332,9 @@ export default function Demo() {
                         {inc.severity}
                       </span>
                     </div>
-                    <span className="text-[11px] text-gray-500">{inc.time} local</span>
+                    <span className="text-[11px] text-gray-500">
+                      {inc.time} local
+                    </span>
                   </div>
                   <p className="font-medium text-gray-100">{inc.type}</p>
                   <p className="text-xs text-gray-400">{inc.venue}</p>
@@ -349,11 +343,10 @@ export default function Demo() {
                   </p>
                 </article>
               ))}
-
             </div>
           </section>
 
-          {/* Map placeholder */}
+          {/* Map */}
           <section className="xl:col-span-1 flex h-full flex-col rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/80 to-black p-4">
             <header className="mb-2 flex items-center justify-between">
               <div>
@@ -383,7 +376,7 @@ export default function Demo() {
             </div>
           </section>
 
-          {/* Personnel / K9 status */}
+          {/* Teams & K9 */}
           <section className="xl:col-span-1 rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/80 to-black p-4">
             <header className="mb-3 flex items-center justify-between">
               <div>
@@ -418,8 +411,12 @@ export default function Demo() {
                 >
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-100">{team.name}</span>
-                      <span className="text-[11px] text-gray-500">{team.cluster}</span>
+                      <span className="font-medium text-gray-100">
+                        {team.name}
+                      </span>
+                      <span className="text-[11px] text-gray-500">
+                        {team.cluster}
+                      </span>
                     </div>
                     <p className="text-xs text-gray-400">{team.role}</p>
                   </div>
@@ -430,16 +427,16 @@ export default function Demo() {
                         (statusColors[team.status] ?? "bg-gray-500")
                       }
                     />
-                    <span className="text-[11px] text-gray-400">{team.status}</span>
+                    <span className="text-[11px] text-gray-400">
+                      {team.status}
+                    </span>
                   </div>
                 </div>
               ))}
-
             </div>
           </section>
         </div>
 
-        {/* Footer hint */}
         <p className="mt-2 text-center text-[11px] text-gray-500">
           All data on this page is simulated for demonstration purposes — in a
           live deployment, this view is wired to Atlas Suite, Atlas Engine, and
@@ -448,4 +445,56 @@ export default function Demo() {
       </div>
     </main>
   );
+}
+
+// ---------- Password gate wrapper (default export) ----------
+export default function Demo() {
+  const [authorized, setAuthorized] = useState(false);
+  const [input, setInput] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (input === DEMO_PASSWORD) {
+      setAuthorized(true);
+    } else {
+      alert("Incorrect password.");
+    }
+  };
+
+  if (!authorized) {
+    return (
+      <main className="min-h-screen bg-black text-white flex items-center justify-center px-4">
+        <div className="w-full max-w-sm rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900 to-black p-6 shadow-xl">
+          <p className="mb-2 text-[11px] uppercase tracking-[0.2em] text-gray-500">
+            Restricted Demo
+          </p>
+          <h1 className="mb-3 text-xl font-semibold">
+            Atlas Suite – FIFA Operations Demo
+          </h1>
+          <p className="mb-4 text-xs text-gray-400">
+            Enter the access password provided by Nitrate Gray to view the live
+            operations demo.
+          </p>
+
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <input
+              type="password"
+              className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
+              placeholder="Access password"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+            />
+            <button
+              type="submit"
+              className="w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              Enter Demo
+            </button>
+          </form>
+        </div>
+      </main>
+    );
+  }
+
+  return <DemoContent />;
 }
