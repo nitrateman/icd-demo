@@ -120,7 +120,7 @@ export default function FifaMap() {
       {/* Map container */}
       <div
         ref={mapContainerRef}
-        className="mt-1 min-h-[260px] flex-1 rounded-xl border border-gray-700 bg-slate-950"
+        className="mt-2 h-[260px] md:h-[340px] w-full rounded-xl border border-gray-700 bg-slate-950 overflow-hidden"
       />
     </div>
   );

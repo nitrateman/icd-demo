@@ -153,8 +153,8 @@ export default function Demo() {
           </section>
 
           {/* Map placeholder */}
-          <section className="xl:col-span-1 rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/80 to-black p-4">
-            <header className="mb-3 flex items-center justify-between">
+          <section className="xl:col-span-1 flex h-full flex-col rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/80 to-black p-4">
+            <header className="mb-2 flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-200">
                   Operational Map
@@ -167,8 +167,9 @@ export default function Demo() {
                 Demo View
               </span>
             </header>
-
-             <FifaMap />
+            <div className="flex-1">
+              <FifaMap />
+            </div>
           </section>
 
           {/* Personnel / K9 status */}
