@@ -79,7 +79,7 @@ const statusColors: Record<string, string> = {
 
 export default function Demo() {
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(
-    incidents[0]?.id ?? null
+    null
   );
 
   return (
