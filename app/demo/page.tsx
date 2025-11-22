@@ -171,49 +171,6 @@ export default function Demo() {
              <FifaMap />
           </section>
 
-          <section className="xl:col-span-1 rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/80 to-black p-4">
-            <header className="mb-3 flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-200">
-                  Operational Map
-                </h2>
-                <p className="text-xs text-gray-500">
-                  In production, this panel is driven by Atlas Engine / ICD map
-                  layers.
-                </p>
-              </div>
-              <span className="rounded-full bg-blue-500/15 px-3 py-1 text-xs font-medium text-blue-300">
-                Demo View
-              </span>
-            </header>
-
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-wrap gap-2 text-xs">
-                {["Incidents", "Venues", "Teams", "K9 Units", "Infrastructure"].map(
-                  (layer, index) => (
-                    <button
-                      key={layer}
-                      className={
-                        "rounded-full border px-3 py-1 " +
-                        (index < 3
-                          ? "border-blue-500/40 bg-blue-500/10 text-blue-200"
-                          : "border-gray-700 bg-gray-900 text-gray-300")
-                      }
-                    >
-                      {layer}
-                    </button>
-                  )
-                )}
-              </div>
-
-              <div className="mt-1 flex min-h-[220px] items-center justify-center rounded-xl border border-dashed border-gray-700 bg-gradient-to-br from-slate-900 to-slate-950 text-xs text-gray-500">
-                Live geospatial view placeholder
-                <br />
-                (Stadium, clusters, routes, and alerts overlay here)
-              </div>
-            </div>
-          </section>
-
           {/* Personnel / K9 status */}
           <section className="xl:col-span-1 rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/80 to-black p-4">
             <header className="mb-3 flex items-center justify-between">
