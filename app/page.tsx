@@ -38,7 +38,7 @@ export default function Home() {
         <div className="mt-10 w-full aspect-video bg-gray-900 rounded-2xl flex items-center justify-center border border-gray-700">
           <div className="video-container">
             <video
-              src="/demo/demo-video.mp4"
+              src="/demo/atlas-suite-demo.mp4"
               autoPlay
               muted
               loop
