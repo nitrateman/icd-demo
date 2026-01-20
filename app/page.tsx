@@ -5,7 +5,7 @@ export default function Home() {
 
         {/* Title */}
         <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-          Atlas Suite – FIFA Operations Demo
+          Atlas Suite – Operations Demonstration
         </h1>
 
         {/* Subtitle */}
@@ -13,7 +13,7 @@ export default function Home() {
           A live, interactive demonstration of Nitrate Gray’s operational
           ecosystem — showing how Atlas Suite empowers real-time situational
           awareness, incident tracking, personnel monitoring, and integrated
-          command support for mega-events.
+          command support for large-scale, multi-site operations.
         </p>
 
         {/* Demo Buttons */}
@@ -28,29 +28,28 @@ export default function Home() {
           <a
             href="https://nitrategray.com"
             target="_blank"
+            rel="noreferrer"
             className="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-medium text-lg transition"
           >
             Visit Nitrate Gray
           </a>
         </div>
 
-        {/* Video Placeholder */}
-        <div className="mt-10 w-full aspect-video bg-gray-900 rounded-2xl flex items-center justify-center border border-gray-700">
-          <div className="video-container">
-            <video
-              src="/demo/atlas-suite-demo.mp4"
-              autoPlay
-              muted
-              loop
-              playsInline
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                borderRadius: "12px"
-              }}
-            />
-          </div>
+        {/* Video */}
+        <div className="mt-10 w-full aspect-video bg-gray-900 rounded-2xl flex items-center justify-center border border-gray-700 overflow-hidden">
+          <video
+            src="/demo/atlas-suite-demo.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              borderRadius: "16px",
+            }}
+          />
         </div>
 
         {/* Footer Note */}

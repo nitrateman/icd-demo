@@ -5,17 +5,17 @@ import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { DEMO_PASSWORD } from "./password";
 
-const FifaMap = dynamic(() => import("../../components/FifaMap"), {
+const OperationsMap = dynamic(() => import("../../components/OperationsMap"), {
   ssr: false,
 });
 
-// --------- Static demo data ---------
+// --------- Static demo data (generic) ---------
 const incidents = [
   {
     id: "INC-2043",
     severity: "Critical",
-    type: "Medical",
-    venue: "Stadium A – North Gate",
+    type: "Medical Response",
+    venue: "Secure Site A – North Access Point",
     time: "20:17",
     status: "Active",
     lat: 34.0522,
@@ -24,8 +24,8 @@ const incidents = [
   {
     id: "INC-2037",
     severity: "High",
-    type: "Crowd Density",
-    venue: "Fan Zone 3",
+    type: "Crowding Risk",
+    venue: "Public Area 3",
     time: "19:52",
     status: "Monitoring",
     lat: 40.7128,
@@ -34,8 +34,8 @@ const incidents = [
   {
     id: "INC-1999",
     severity: "Medium",
-    type: "Transport Delay",
-    venue: "Team Bus Route – Cluster West",
+    type: "Transit Disruption",
+    venue: "Transit Corridor – West Sector",
     time: "19:10",
     status: "Resolved",
     lat: 32.7767,
@@ -46,7 +46,7 @@ const incidents = [
 const teams = [
   {
     name: "Team Alpha",
-    role: "Stadium Response",
+    role: "Site Response Team",
     cluster: "Central",
     status: "Green",
     lat: 34.0522,
@@ -54,7 +54,7 @@ const teams = [
   },
   {
     name: "Team Bravo",
-    role: "Mobile K9 Sweep",
+    role: "Mobile Detection Sweep",
     cluster: "South",
     status: "Amber",
     lat: 29.7604,
@@ -62,7 +62,7 @@ const teams = [
   },
   {
     name: "Team Charlie",
-    role: "Fan Zone Detail",
+    role: "Public Area Detail",
     cluster: "East",
     status: "Green",
     lat: 25.7617,
@@ -70,7 +70,7 @@ const teams = [
   },
   {
     name: "K9 Unit – Nero",
-    role: "Explosives Detection",
+    role: "Detection Operations",
     cluster: "Transit Hub",
     status: "Green",
     lat: 19.4326,
@@ -80,25 +80,26 @@ const teams = [
 
 const scenarios = [
   {
-    id: "gate-medical",
-    label: "Gate Medical Event",
-    summary: "Critical medical at Stadium A – North Gate, Team Alpha responds.",
+    id: "access-medical",
+    label: "Access Point Medical",
+    summary:
+      "Critical medical response at Secure Site A – North Access Point; Team Alpha responds.",
     incidentId: "INC-2043",
     teamName: "Team Alpha",
   },
   {
-    id: "fan-surge",
-    label: "Fan Zone Surge",
+    id: "public-surge",
+    label: "Public Area Surge",
     summary:
-      "High crowd density in Fan Zone 3, Team Charlie assists local security.",
+      "High crowding risk in Public Area 3; Team Charlie supports local security.",
     incidentId: "INC-2037",
     teamName: "Team Charlie",
   },
   {
-    id: "transit-delay",
+    id: "transit-disruption",
     label: "Transit Disruption",
     summary:
-      "Medium transport delay on bus route, Team Bravo reviews routing.",
+      "Medium transit disruption in West Sector; Team Bravo reviews routing and coverage.",
     incidentId: "INC-1999",
     teamName: "Team Bravo",
   },
@@ -113,18 +114,13 @@ const statusColors: Record<string, string> = {
 type OpsZone = {
   label: string;
   tz: string;
-  note?: string;
 };
 
 const opsTimeZones: OpsZone[] = [
-  { label: "PT", tz: "America/Los_Angeles", note: "VAN / SEA / LA / SF" },
-  { label: "MT", tz: "America/Denver", note: "KC / MTY / GDL (approx)" },
-  { label: "CT", tz: "America/Chicago", note: "DAL / HOU / CDMX" },
-  {
-    label: "ET",
-    tz: "America/New_York",
-    note: "NY / BOS / MIA / TOR / PHI / ATL",
-  },
+  { label: "PT", tz: "America/Los_Angeles" },
+  { label: "MT", tz: "America/Denver" },
+  { label: "CT", tz: "America/Chicago" },
+  { label: "ET", tz: "America/New_York" },
 ];
 
 // ---------- Ops clock ----------
@@ -180,12 +176,8 @@ function DemoContent() {
     const scenario = scenarios.find((s) => s.id === scenarioId);
     if (!scenario) return;
 
-    if (scenario.incidentId) {
-      setSelectedIncidentId(scenario.incidentId);
-    }
-    if (scenario.teamName) {
-      setSelectedTeamName(scenario.teamName);
-    }
+    if (scenario.incidentId) setSelectedIncidentId(scenario.incidentId);
+    if (scenario.teamName) setSelectedTeamName(scenario.teamName);
 
     setRoleMode("Ops");
   };
@@ -204,18 +196,18 @@ function DemoContent() {
             </h1>
             <p className="max-w-2xl text-sm text-gray-400">
               {roleMode === "Ops" &&
-                "Static sample data showing how Atlas brings together incidents, mapping, and personnel status for FIFA-scale events. In a live deployment, each module is powered by real-time feeds."}
+                "Static sample data showing how Atlas brings together incidents, mapping, and personnel status across multi-site operations. In a live deployment, each module is powered by real-time feeds."}
               {roleMode === "Executive" &&
-                "Executive view: quick assessment of risk, readiness, and resource posture across FIFA venue clusters, designed for command-level decision support."}
+                "Executive view: quick assessment of risk, readiness, and resource posture across operational regions, designed for command-level decision support."}
               {roleMode === "Analyst" &&
-                "Analyst view: focuses on patterns across incidents, deployments, and geography to surface emerging risks across FIFA venue clusters."}
+                "Analyst view: focuses on patterns across incidents, deployments, and geography to surface emerging risks and operational hotspots."}
             </p>
           </div>
 
           <div className="flex flex-col items-stretch gap-3 md:items-end">
             <div className="flex items-center gap-3">
               <div className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs text-emerald-300">
-                Cluster: Example City
+                Cluster: Example Region
               </div>
             </div>
 
@@ -248,8 +240,7 @@ function DemoContent() {
                 Scenario Mode
               </span>
               <span className="text-[11px] text-gray-400">
-                Select a scenario to drive the map, incidents, and teams as a
-                guided demo.
+                Select a scenario to drive the map, incidents, and teams as a guided demo.
               </span>
             </div>
 
@@ -289,12 +280,9 @@ function DemoContent() {
                   Incidents
                 </h2>
                 <p className="text-xs text-gray-500">
-                  {roleMode === "Ops" &&
-                    "Prioritized, event-specific incident stream."}
-                  {roleMode === "Executive" &&
-                    "Roll-up of critical and high-priority items impacting operations."}
-                  {roleMode === "Analyst" &&
-                    "Current incident set for trend and correlation analysis."}
+                  {roleMode === "Ops" && "Prioritized incident stream across sites and sectors."}
+                  {roleMode === "Executive" && "Roll-up of critical and high-priority items impacting operations."}
+                  {roleMode === "Analyst" && "Current incident set for trend and correlation analysis."}
                 </p>
               </div>
               <span className="rounded-full bg-red-500/15 px-3 py-1 text-xs font-medium text-red-300">
@@ -316,9 +304,7 @@ function DemoContent() {
                 >
                   <div className="mb-1 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-mono text-gray-500">
-                        {inc.id}
-                      </span>
+                      <span className="text-[11px] font-mono text-gray-500">{inc.id}</span>
                       <span
                         className={
                           "rounded-full px-2 py-0.5 text-[11px] font-medium " +
@@ -332,15 +318,11 @@ function DemoContent() {
                         {inc.severity}
                       </span>
                     </div>
-                    <span className="text-[11px] text-gray-500">
-                      {inc.time} local
-                    </span>
+                    <span className="text-[11px] text-gray-500">{inc.time} local</span>
                   </div>
                   <p className="font-medium text-gray-100">{inc.type}</p>
                   <p className="text-xs text-gray-400">{inc.venue}</p>
-                  <p className="mt-1 text-[11px] text-emerald-300">
-                    Status: {inc.status}
-                  </p>
+                  <p className="mt-1 text-[11px] text-emerald-300">Status: {inc.status}</p>
                 </article>
               ))}
             </div>
@@ -354,20 +336,18 @@ function DemoContent() {
                   Operational Map
                 </h2>
                 <p className="text-xs text-gray-500">
-                  {roleMode === "Ops" &&
-                    "Venue cities for FIFA 26, visualized on a live Mapbox canvas."}
-                  {roleMode === "Executive" &&
-                    "High-level geographic view of venue exposure and resource posture."}
-                  {roleMode === "Analyst" &&
-                    "Spatial context for incident density, movement, and cross-cluster effects."}
+                  {roleMode === "Ops" && "Representative operating locations visualized on a live Mapbox canvas."}
+                  {roleMode === "Executive" && "High-level geographic view of exposure and resource posture."}
+                  {roleMode === "Analyst" && "Spatial context for incident density, movement, and cross-area effects."}
                 </p>
               </div>
               <span className="rounded-full bg-blue-500/15 px-3 py-1 text-xs font-medium text-blue-300">
                 Demo View
               </span>
             </header>
+
             <div className="flex-1">
-              <FifaMap
+              <OperationsMap
                 incidents={incidents}
                 selectedIncidentId={selectedIncidentId}
                 teams={teams}
@@ -376,20 +356,17 @@ function DemoContent() {
             </div>
           </section>
 
-          {/* Teams & K9 */}
+          {/* Teams */}
           <section className="xl:col-span-1 rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/80 to-black p-4">
             <header className="mb-3 flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-200">
-                  Teams & K9 Units
+                  Teams & Units
                 </h2>
                 <p className="text-xs text-gray-500">
-                  {roleMode === "Ops" &&
-                    "Example roster view with quick-look status."}
-                  {roleMode === "Executive" &&
-                    "Summary of deployment posture across key response elements."}
-                  {roleMode === "Analyst" &&
-                    "Live unit positions supporting incident response and coverage analysis."}
+                  {roleMode === "Ops" && "Example roster view with quick-look status."}
+                  {roleMode === "Executive" && "Summary of deployment posture across key response elements."}
+                  {roleMode === "Analyst" && "Live unit positions supporting incident response and coverage analysis."}
                 </p>
               </div>
               <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-300">
@@ -411,15 +388,12 @@ function DemoContent() {
                 >
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-100">
-                        {team.name}
-                      </span>
-                      <span className="text-[11px] text-gray-500">
-                        {team.cluster}
-                      </span>
+                      <span className="font-medium text-gray-100">{team.name}</span>
+                      <span className="text-[11px] text-gray-500">{team.cluster}</span>
                     </div>
                     <p className="text-xs text-gray-400">{team.role}</p>
                   </div>
+
                   <div className="flex items-center gap-2">
                     <span
                       className={
@@ -427,9 +401,7 @@ function DemoContent() {
                         (statusColors[team.status] ?? "bg-gray-500")
                       }
                     />
-                    <span className="text-[11px] text-gray-400">
-                      {team.status}
-                    </span>
+                    <span className="text-[11px] text-gray-400">{team.status}</span>
                   </div>
                 </div>
               ))}
@@ -438,9 +410,7 @@ function DemoContent() {
         </div>
 
         <p className="mt-2 text-center text-[11px] text-gray-500">
-          All data on this page is simulated for demonstration purposes — in a
-          live deployment, this view is wired to Atlas Suite, Atlas Engine, and
-          the Incident Command Dashboard.
+          All data on this page is simulated for demonstration purposes. In a live deployment, this view connects to real-time operational systems and data feeds.
         </p>
       </div>
     </main>
@@ -469,11 +439,10 @@ export default function Demo() {
             Restricted Demo
           </p>
           <h1 className="mb-3 text-xl font-semibold">
-            Atlas Suite – FIFA Operations Demo
+            Atlas Suite – Operations Demo
           </h1>
           <p className="mb-4 text-xs text-gray-400">
-            Enter the access password provided by Nitrate Gray to view the live
-            operations demo.
+            Enter the access password provided by Nitrate Gray to view the live operations demo.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-3">
