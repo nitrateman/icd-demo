@@ -20,11 +20,9 @@ type IncidentMarker = {
   id: string;
   severity: "Critical" | "High" | "Medium" | string;
   type: string;
-  venue: string; // venue.id
+  venue: string; // venue.id or label
   lat: number;
   lng: number;
-  // NOTE: your demo page incidents may include extra fields like time/status;
-  // TS structural typing allows extra fields as long as these exist.
 };
 
 type TeamMarker = {
@@ -84,15 +82,15 @@ const sampleTeams: TeamMarker[] = [
 
 // ---------------- Helpers ----------------
 function getIncidentColor(severity: string) {
-  if (severity === "Critical") return "#ef4444"; // red-500
-  if (severity === "High") return "#f59e0b"; // amber-500
-  return "#38bdf8"; // sky-400
+  if (severity === "Critical") return "#ef4444";
+  if (severity === "High") return "#f59e0b";
+  return "#38bdf8";
 }
 
 function getTeamColor(status: string) {
-  if (status === "Green") return "#22c55e"; // green-500
-  if (status === "Amber") return "#f59e0b"; // amber-500
-  return "#ef4444"; // red-500
+  if (status === "Green") return "#22c55e";
+  if (status === "Amber") return "#f59e0b";
+  return "#ef4444";
 }
 
 function applySelectedStyle(el: HTMLElement) {
@@ -115,7 +113,7 @@ export default function OperationsMap({
   selectedIncidentId = null,
   selectedTeamName = null,
   initialZoom = 2.8,
-  initialCenter = [-98.5795, 39.8283], // center-ish USA
+  initialCenter = [-98.5795, 39.8283],
   onVenueSelect,
   onIncidentSelect,
   onTeamSelect,
@@ -123,16 +121,22 @@ export default function OperationsMap({
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
 
-  // store markers so we can update styles + cleanup properly
   const venueMarkersRef = useRef<mapboxgl.Marker[]>([]);
-  const incidentMarkersRef = useRef<Array<{ marker: mapboxgl.Marker; id: string; el: HTMLElement; lng: number; lat: number }>>([]);
-  const teamMarkersRef = useRef<Array<{ marker: mapboxgl.Marker; name: string; el: HTMLElement; lng: number; lat: number }>>([]);
+  const incidentMarkersRef = useRef<
+    Array<{ marker: mapboxgl.Marker; id: string; el: HTMLElement; lng: number; lat: number }>
+  >([]);
+  const teamMarkersRef = useRef<
+    Array<{ marker: mapboxgl.Marker; name: string; el: HTMLElement; lng: number; lat: number }>
+  >([]);
 
   const [ready, setReady] = useState(false);
 
   const hasToken = Boolean(process.env.NEXT_PUBLIC_MAPBOX_TOKEN);
 
-  // quick lookup so selection "flyTo" is easy
+  // Freeze initial values to prevent map recreation loops (array refs)
+  const initialCenterRef = useRef<[number, number]>(initialCenter);
+  const initialZoomRef = useRef<number>(initialZoom);
+
   const selectedIncident = useMemo(
     () => (selectedIncidentId ? incidents.find((i) => i.id === selectedIncidentId) : undefined),
     [incidents, selectedIncidentId]
@@ -143,48 +147,50 @@ export default function OperationsMap({
     [teams, selectedTeamName]
   );
 
-  // ---------------- Map init ----------------
+  // ---------------- Map init (RUN ONCE) ----------------
   useEffect(() => {
     if (!mapContainerRef.current) return;
-    if (mapRef.current) return; // prevent double init in Next dev
+    if (mapRef.current) return;
 
+    // Hard bail if token missing to prevent runtime crash loops
     if (!mapboxgl.accessToken || mapboxgl.accessToken.trim() === "") {
       console.warn("Mapbox token missing. Set NEXT_PUBLIC_MAPBOX_TOKEN.");
+      return;
     }
 
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: "mapbox://styles/mapbox/dark-v11",
-      center: initialCenter,
-      zoom: initialZoom,
+      center: initialCenterRef.current,
+      zoom: initialZoomRef.current,
       attributionControl: true,
     });
 
     mapRef.current = map;
     map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
 
-    map.on("load", () => setReady(true));
+    const onLoad = () => setReady(true);
+    map.on("load", onLoad);
 
     return () => {
       try {
         venueMarkersRef.current.forEach((m) => m.remove());
         incidentMarkersRef.current.forEach((m) => m.marker.remove());
         teamMarkersRef.current.forEach((m) => m.marker.remove());
-      } catch {
-        // no-op
-      }
+      } catch {}
 
       venueMarkersRef.current = [];
       incidentMarkersRef.current = [];
       teamMarkersRef.current = [];
 
+      map.off("load", onLoad);
       map.remove();
       mapRef.current = null;
       setReady(false);
     };
-  }, [initialCenter, initialZoom]);
+  }, []);
 
-  // ---------------- Venue markers ----------------
+  // ---------------- Venue markers (rebuild only when map ready) ----------------
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
@@ -229,13 +235,11 @@ export default function OperationsMap({
         .addTo(map);
 
       venueMarkersRef.current.push(marker);
-
-      // cleanup listener when marker removed
       marker.on("remove", () => el.removeEventListener("click", onClick));
     });
   }, [ready, onVenueSelect]);
 
-  // ---------------- Incident markers ----------------
+  // ---------------- Incident markers (REBUILD ONLY when incidents change) ----------------
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
@@ -253,9 +257,8 @@ export default function OperationsMap({
       el.style.boxShadow = "0 8px 18px rgba(0,0,0,0.45)";
       el.style.cursor = "pointer";
 
-      if (selectedIncidentId && inc.id === selectedIncidentId) {
-        applySelectedStyle(el);
-      }
+      // apply selection style at creation time (initial)
+      if (selectedIncidentId && inc.id === selectedIncidentId) applySelectedStyle(el);
 
       const onClick = (e: MouseEvent) => {
         e.stopPropagation();
@@ -277,12 +280,14 @@ export default function OperationsMap({
         .addTo(map);
 
       incidentMarkersRef.current.push({ marker, id: inc.id, el, lng: inc.lng, lat: inc.lat });
-
       marker.on("remove", () => el.removeEventListener("click", onClick));
     });
-  }, [ready, incidents, onIncidentSelect, selectedIncidentId]);
 
-  // ---------------- Team markers ----------------
+    // IMPORTANT: selection highlighting updates are handled in a separate effect below.
+    // Do NOT rebuild markers on selectedIncidentId changes (prevents flashing).
+  }, [ready, incidents, onIncidentSelect]); // <-- removed selectedIncidentId
+
+  // ---------------- Team markers (REBUILD ONLY when teams change) ----------------
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
@@ -300,9 +305,7 @@ export default function OperationsMap({
       el.style.boxShadow = "0 8px 18px rgba(0,0,0,0.35)";
       el.style.cursor = "pointer";
 
-      if (selectedTeamName && t.name === selectedTeamName) {
-        applySelectedStyle(el);
-      }
+      if (selectedTeamName && t.name === selectedTeamName) applySelectedStyle(el);
 
       const onClick = (e: MouseEvent) => {
         e.stopPropagation();
@@ -325,14 +328,15 @@ export default function OperationsMap({
         .addTo(map);
 
       teamMarkersRef.current.push({ marker, name: t.name, el, lng: t.lng, lat: t.lat });
-
       marker.on("remove", () => el.removeEventListener("click", onClick));
     });
-  }, [ready, teams, onTeamSelect, selectedTeamName]);
 
-  // ---------------- Selection updates (no redraw needed) ----------------
+    // IMPORTANT: selection highlighting updates are handled in a separate effect below.
+    // Do NOT rebuild markers on selectedTeamName changes (prevents flashing).
+  }, [ready, teams, onTeamSelect]); // <-- removed selectedTeamName
+
+  // ---------------- Selection updates (style only, NO marker rebuild) ----------------
   useEffect(() => {
-    // Update incident marker styles without rebuilding them (in case list is large later)
     incidentMarkersRef.current.forEach((m) => {
       if (selectedIncidentId && m.id === selectedIncidentId) applySelectedStyle(m.el);
       else clearSelectedStyle(m.el);
@@ -346,18 +350,26 @@ export default function OperationsMap({
     });
   }, [selectedTeamName]);
 
-  // Optional: auto-focus when selection changes
+  // ---------------- Auto-focus on selection ----------------
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
 
     if (selectedIncident) {
-      map.flyTo({ center: [selectedIncident.lng, selectedIncident.lat], zoom: Math.max(map.getZoom(), 7), speed: 0.9 });
+      map.flyTo({
+        center: [selectedIncident.lng, selectedIncident.lat],
+        zoom: Math.max(map.getZoom(), 7),
+        speed: 0.9,
+      });
       return;
     }
 
     if (selectedTeam) {
-      map.flyTo({ center: [selectedTeam.lng, selectedTeam.lat], zoom: Math.max(map.getZoom(), 8), speed: 0.9 });
+      map.flyTo({
+        center: [selectedTeam.lng, selectedTeam.lat],
+        zoom: Math.max(map.getZoom(), 8),
+        speed: 0.9,
+      });
     }
   }, [ready, selectedIncident, selectedTeam]);
 
