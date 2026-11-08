@@ -136,6 +136,7 @@ export default function OperationsMap({
   // Freeze initial values to prevent map recreation loops (array refs)
   const initialCenterRef = useRef<[number, number]>(initialCenter);
   const initialZoomRef = useRef<number>(initialZoom);
+  const initialPointsRef = useRef([...incidents, ...teams]);
 
   const selectedIncident = useMemo(
     () => (selectedIncidentId ? incidents.find((i) => i.id === selectedIncidentId) : undefined),
@@ -169,7 +170,10 @@ export default function OperationsMap({
     mapRef.current = map;
     map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
 
-    const onLoad = () => setReady(true);
+    const onLoad = () => {
+      fitTo(map, initialPointsRef.current, { maxZoom: 4.5, duration: 0 });
+      setReady(true);
+    };
     map.on("load", onLoad);
 
     return () => {
@@ -200,20 +204,13 @@ export default function OperationsMap({
 
     venues.forEach((v) => {
       const el = document.createElement("div");
-      el.style.width = "12px";
-      el.style.height = "12px";
+      // Sites are neutral rings so they never read as an incident or team status.
+      el.style.width = "9px";
+      el.style.height = "9px";
       el.style.borderRadius = "999px";
-      el.style.border = "2px solid rgba(255,255,255,0.6)";
-      el.style.boxShadow = "0 0 0 2px rgba(0,0,0,0.6)";
+      el.style.border = "1.5px solid rgba(255,255,255,0.55)";
+      el.style.background = "rgba(255,255,255,0.08)";
       el.style.cursor = "pointer";
-
-      const regionColor =
-        v.region === "Region A"
-          ? "rgba(56,189,248,0.9)"
-          : v.region === "Region B"
-          ? "rgba(34,197,94,0.9)"
-          : "rgba(245,158,11,0.9)";
-      el.style.background = regionColor;
 
       const onClick = (e: MouseEvent) => {
         e.stopPropagation();
@@ -322,7 +319,7 @@ export default function OperationsMap({
          </div>`
       );
 
-      const marker = new mapboxgl.Marker({ element: el, anchor: "center" })
+      const marker = new mapboxgl.Marker({ element: el, anchor: "center", offset: [11, -11] })
         .setLngLat([t.lng, t.lat])
         .setPopup(popup)
         .addTo(map);
@@ -351,27 +348,15 @@ export default function OperationsMap({
   }, [selectedTeamName]);
 
   // ---------------- Auto-focus on selection ----------------
+  // A scenario selects an incident and its responding team; frame both.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
-
-    if (selectedIncident) {
-      map.flyTo({
-        center: [selectedIncident.lng, selectedIncident.lat],
-        zoom: Math.max(map.getZoom(), 7),
-        speed: 0.9,
-      });
-      return;
-    }
-
-    if (selectedTeam) {
-      map.flyTo({
-        center: [selectedTeam.lng, selectedTeam.lat],
-        zoom: Math.max(map.getZoom(), 8),
-        speed: 0.9,
-      });
-    }
+    const points = [selectedIncident, selectedTeam].filter(Boolean) as Array<{ lng: number; lat: number }>;
+    if (points.length) fitTo(map, points, { maxZoom: 9, duration: 1200 });
   }, [ready, selectedIncident, selectedTeam]);
+
+  const [legendOpen, setLegendOpen] = useState(true);
 
   return (
     <div className="w-full h-full relative rounded-xl overflow-hidden border border-white/10">
@@ -383,20 +368,56 @@ export default function OperationsMap({
 
       <div ref={mapContainerRef} className="w-full h-full" />
 
-      {/* Legend */}
-      <div className="absolute z-10 bottom-3 left-3 bg-black/60 backdrop-blur px-3 py-2 rounded-lg border border-white/10 text-xs text-white/90">
-        <div className="font-semibold mb-1">Legend</div>
-        <div className="flex items-center gap-2">
-          <span className="inline-block w-3 h-3 rounded-sm" style={{ background: "#ef4444" }} /> Critical
-          <span className="inline-block w-3 h-3 rounded-sm ml-2" style={{ background: "#f59e0b" }} /> High
-          <span className="inline-block w-3 h-3 rounded-sm ml-2" style={{ background: "#38bdf8" }} /> Medium
-        </div>
-        <div className="flex items-center gap-2 mt-2">
-          <span className="inline-block w-3 h-3 rounded-full" style={{ background: "#22c55e" }} /> Green
-          <span className="inline-block w-3 h-3 rounded-full ml-2" style={{ background: "#f59e0b" }} /> Amber
-          <span className="inline-block w-3 h-3 rounded-full ml-2" style={{ background: "#ef4444" }} /> Red
-        </div>
+      {/* Legend: top-left so the Mapbox logo and attribution stay visible */}
+      <div className="absolute z-10 top-3 left-3 max-w-[calc(100%-4.5rem)] rounded-lg border border-white/10 bg-black/70 px-2.5 py-1.5 text-[11px] text-white/90 backdrop-blur">
+        <button
+          type="button"
+          onClick={() => setLegendOpen((o) => !o)}
+          className="flex items-center gap-1 font-semibold"
+          aria-expanded={legendOpen}
+        >
+          Legend <span className="text-white/50">{legendOpen ? "−" : "+"}</span>
+        </button>
+        {legendOpen && (
+          <div className="mt-1 space-y-1">
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+              <span className="text-white/50">Incident</span>
+              <LegendSwatch color="#ef4444" shape="square" label="Critical" />
+              <LegendSwatch color="#f59e0b" shape="square" label="High" />
+              <LegendSwatch color="#38bdf8" shape="square" label="Medium" />
+            </div>
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+              <span className="text-white/50">Team</span>
+              <LegendSwatch color="#22c55e" shape="dot" label="Green" />
+              <LegendSwatch color="#f59e0b" shape="dot" label="Amber" />
+              <LegendSwatch color="#ef4444" shape="dot" label="Red" />
+              <span className="flex items-center gap-1 whitespace-nowrap">
+                <span className="inline-block h-2.5 w-2.5 rounded-full border border-white/60 bg-white/10" /> Site
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
+}
+
+function LegendSwatch({ color, shape, label }: { color: string; shape: "square" | "dot"; label: string }) {
+  return (
+    <span className="flex items-center gap-1 whitespace-nowrap">
+      <span className={"inline-block h-2.5 w-2.5 " + (shape === "dot" ? "rounded-full" : "rounded-sm")} style={{ background: color }} />
+      {label}
+    </span>
+  );
+}
+
+function fitTo(
+  map: mapboxgl.Map,
+  points: Array<{ lng: number; lat: number }>,
+  { maxZoom, duration }: { maxZoom: number; duration: number }
+) {
+  if (!points.length) return;
+  const bounds = new mapboxgl.LngLatBounds();
+  points.forEach((p) => bounds.extend([p.lng, p.lat]));
+  map.fitBounds(bounds, { padding: { top: 70, bottom: 40, left: 40, right: 60 }, maxZoom, duration });
 }

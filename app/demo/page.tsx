@@ -47,7 +47,7 @@ const teams = [
   {
     name: "Team Alpha",
     role: "Site Response Team",
-    cluster: "Central",
+    cluster: "West",
     status: "Green",
     lat: 34.0522,
     lng: -118.2437,
@@ -55,18 +55,18 @@ const teams = [
   {
     name: "Team Bravo",
     role: "Mobile Detection Sweep",
-    cluster: "South",
+    cluster: "Central",
     status: "Amber",
-    lat: 29.7604,
-    lng: -95.3698,
+    lat: 32.7767,
+    lng: -96.797,
   },
   {
     name: "Team Charlie",
     role: "Public Area Detail",
     cluster: "East",
     status: "Green",
-    lat: 25.7617,
-    lng: -80.1918,
+    lat: 40.7128,
+    lng: -74.006,
   },
   {
     name: "K9 Unit – Nero",
@@ -104,6 +104,14 @@ const scenarios = [
     teamName: "Team Bravo",
   },
 ];
+
+const severityCount = (level: string) => incidents.filter((i) => i.severity === level).length;
+const incidentBadge = [
+  severityCount("Critical") && `${severityCount("Critical")} Critical`,
+  severityCount("High") && `${severityCount("High")} High`,
+].filter(Boolean).join(" · ");
+const k9Count = teams.filter((t) => t.name.startsWith("K9")).length;
+const teamBadge = `${teams.length - k9Count} Teams · ${k9Count} K9`;
 
 const statusColors: Record<string, string> = {
   Green: "bg-emerald-500",
@@ -274,7 +282,7 @@ function DemoContent() {
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {/* Incidents */}
           <section className="xl:col-span-1 rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/80 to-black p-4">
-            <header className="mb-3 flex items-center justify-between">
+            <header className="mb-3 flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-200">
                   Incidents
@@ -285,8 +293,8 @@ function DemoContent() {
                   {roleMode === "Analyst" && "Current incident set for trend and correlation analysis."}
                 </p>
               </div>
-              <span className="rounded-full bg-red-500/15 px-3 py-1 text-xs font-medium text-red-300">
-                1 Critical · 1 High
+              <span className="shrink-0 whitespace-nowrap rounded-full bg-red-500/15 px-3 py-1 text-xs font-medium text-red-300">
+                {incidentBadge}
               </span>
             </header>
 
@@ -330,7 +338,7 @@ function DemoContent() {
 
           {/* Map */}
           <section className="xl:col-span-1 flex h-full flex-col rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/80 to-black p-4">
-            <header className="mb-2 flex items-center justify-between">
+            <header className="mb-2 flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-200">
                   Operational Map
@@ -341,24 +349,27 @@ function DemoContent() {
                   {roleMode === "Analyst" && "Spatial context for incident density, movement, and cross-area effects."}
                 </p>
               </div>
-              <span className="rounded-full bg-blue-500/15 px-3 py-1 text-xs font-medium text-blue-300">
+              <span className="shrink-0 whitespace-nowrap rounded-full bg-blue-500/15 px-3 py-1 text-xs font-medium text-blue-300">
                 Demo View
               </span>
             </header>
 
-            <div className="flex-1">
-              <OperationsMap
-                incidents={incidents}
-                selectedIncidentId={selectedIncidentId}
-                teams={teams}
-                selectedTeamName={selectedTeamName}
-              />
+            {/* The map fills the column at any width, with a floor so it never collapses */}
+            <div className="relative min-h-[420px] flex-1">
+              <div className="absolute inset-0">
+                <OperationsMap
+                  incidents={incidents}
+                  selectedIncidentId={selectedIncidentId}
+                  teams={teams}
+                  selectedTeamName={selectedTeamName}
+                />
+              </div>
             </div>
           </section>
 
           {/* Teams */}
           <section className="xl:col-span-1 rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/80 to-black p-4">
-            <header className="mb-3 flex items-center justify-between">
+            <header className="mb-3 flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-200">
                   Teams & Units
@@ -369,8 +380,8 @@ function DemoContent() {
                   {roleMode === "Analyst" && "Live unit positions supporting incident response and coverage analysis."}
                 </p>
               </div>
-              <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-300">
-                3 Teams · 1 K9
+              <span className="shrink-0 whitespace-nowrap rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-300">
+                {teamBadge}
               </span>
             </header>
 
@@ -421,13 +432,14 @@ function DemoContent() {
 export default function Demo() {
   const [authorized, setAuthorized] = useState(false);
   const [input, setInput] = useState("");
+  const [wrong, setWrong] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (input === DEMO_PASSWORD) {
       setAuthorized(true);
     } else {
-      alert("Incorrect password.");
+      setWrong(true);
     }
   };
 
@@ -451,8 +463,18 @@ export default function Demo() {
               className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
               placeholder="Access password"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+                setWrong(false);
+              }}
+              aria-invalid={wrong}
+              autoFocus
             />
+            {wrong && (
+              <p className="text-xs text-red-300" role="alert">
+                That password didn&apos;t work. Check the email from Nitrate Gray.
+              </p>
+            )}
             <button
               type="submit"
               className="w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
